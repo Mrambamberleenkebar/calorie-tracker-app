@@ -15,6 +15,8 @@ st.set_page_config(
 st.write("# Food Overview 🥦")
 st.write("View and Log Food and Calorie Intake")
 
+print(st.experimental_user)
+
 match st.experimental_user.email:
     case "marleenbgbakker@gmail.com":
         default_person = "Marleen"
