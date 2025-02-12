@@ -15,7 +15,18 @@ st.set_page_config(
 st.write("# Food Overview 🥦")
 st.write("View and Log Food and Calorie Intake")
 
-who = st.pills("Who", options=["Bela", "Marleen"], default="Bela", selection_mode="single")
+match st.experimental_user.email:
+    case "marleenbgbakker@gmail.com":
+        default_person = "Marleen"
+    case "brstamenkovits@gmail.com":
+        default_person = "Bela"
+    case "test@example.com":
+        default_person = "Bela"
+        print("local dev use Bela")
+    case _:
+        default_person = None
+
+who = st.pills("Who", options=["Bela", "Marleen"], default=default_person, selection_mode="single")
 date = st.date_input("Date", value=pd.to_datetime("today"))
 date = date.strftime("%Y-%m-%d")
 
