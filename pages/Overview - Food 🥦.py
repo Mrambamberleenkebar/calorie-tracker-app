@@ -43,6 +43,9 @@ def calc_total_calories(row):
 def calc_total_carbs(row):
     return round(row["weight"] * row["Carbs (g)"]/100, 0)
 
+def calc_total_protein(row):
+    return round(row["weight"] * row["Protein (g)"]/100, 0)
+
 # filter for a single day
 df_day = df_food_log[(df_food_log["date"]==date)]
 
@@ -51,6 +54,7 @@ df_day = df_day.merge(df_food_data, left_on="name", right_on="Name", how="left")
 df_day["weight"] = df_day.apply(calc_weight, axis=1)
 df_day["total_calories"] = df_day.apply(calc_total_calories, axis=1)
 df_day["total_carbs"] = df_day.apply(calc_total_carbs, axis=1)
+df_day["total_protein"] = df_day.apply(calc_total_protein, axis=1)
 
 # rename columns to be displayed
 df_day = df_day.rename(columns={
@@ -58,18 +62,22 @@ df_day = df_day.rename(columns={
     "quantity": "Quantity",
     "serving": "Serving",
     "total_calories": "Calories",
-    "total_carbs": "Carbs"
+    "total_carbs": "Carbs",
+    "total_protein": "Protein"
 })
 
 # summary of calories by meal
 calories_by_meal = df_day.groupby("meal")["Calories"].sum()
 carbs_by_meal = df_day.groupby("meal")["Carbs"].sum()
+protein_by_meal = df_day.groupby("meal")["Protein"].sum()
 
 # Create a stacked bar chart
 calories_by_meal = calories_by_meal.reset_index()
 calories_by_meal = calories_by_meal.transpose()
 carbs_by_meal = carbs_by_meal.reset_index()
 carbs_by_meal = carbs_by_meal.transpose()
+protein_by_meal = protein_by_meal.reset_index()
+protein_by_meal = protein_by_meal.transpose()
 
 # assign meal as column header
 calories_by_meal.columns = calories_by_meal.iloc[0]
@@ -79,6 +87,10 @@ calories_by_meal.reset_index(drop=True, inplace=True)
 carbs_by_meal.columns = carbs_by_meal.iloc[0]
 carbs_by_meal = carbs_by_meal[1:]
 carbs_by_meal.reset_index(drop=True, inplace=True)
+
+protein_by_meal.columns = protein_by_meal.iloc[0]
+protein_by_meal = protein_by_meal[1:]
+protein_by_meal.reset_index(drop=True, inplace=True)
 
 def calculate_energy_burned(weight, height, birthday, exercise_level, sex):
     exercise_map = {
@@ -133,6 +145,7 @@ capacity = capacity - target
 
 consumed = calories_by_meal.sum(axis=1)
 carbs_consumed = carbs_by_meal.sum(axis=1)
+protein_consumed = protein_by_meal.sum(axis=1)
 remaining = capacity - consumed
 
 calories_by_meal['_Remaining'] = remaining
@@ -147,6 +160,7 @@ calories_by_meal = calories_by_meal.rename(columns={"Breakfast": "1. 🍌 Breakf
 if remaining.values[0] > 0:
     st.write(f"#### Great Job!", unsafe_allow_html=True)
     st.markdown(f"<span style='font-weight:bold'>Carbs Consumed: {round(carbs_consumed.to_list()[0])} g </span>", unsafe_allow_html=True)
+    st.markdown(f"<span style='font-weight:bold'>Protein Consumed: {round(protein_consumed.to_list()[0])} g </span>", unsafe_allow_html=True)
     st.markdown(f"<span style='font-weight:bold'>KCal Consumed: {round(consumed.to_list()[0])} kcal </span>", unsafe_allow_html=True)
     st.markdown(f"<span style='font-weight:bold'>Allowed: {round(capacity)} kcal </span>", unsafe_allow_html=True)
     st.markdown(f"<span style='color:green; font-weight:bold'>Remaining: {round(float(remaining.values[0]))} kcal </span>", unsafe_allow_html=True)
@@ -155,6 +169,7 @@ if remaining.values[0] > 0:
 else:
     st.write(f"#### Oh No!", unsafe_allow_html=True)
     st.markdown(f"<span style='font-weight:bold'>Carbs Consumed: {round(carbs_consumed.to_list()[0])} g </span>", unsafe_allow_html=True)
+    st.markdown(f"<span style='font-weight:bold'>Protein Consumed: {round(protein_consumed.to_list()[0])} g </span>", unsafe_allow_html=True)
     st.markdown(f"<span style='font-weight:bold'>KCal Consumed: {round(consumed.to_list()[0])} kcal </span>", unsafe_allow_html=True)
     st.markdown(f"<span style='font-weight:bold'>Allowed: {round(capacity)} kcal </span>", unsafe_allow_html=True)
     st.markdown(f"<span style='color:red'>You have exceeded your daily calorie intake by {round(-remaining.values[0])} kcal</span>", unsafe_allow_html=True)
@@ -203,11 +218,16 @@ for icon, meal, df in meals:
                 weight = (quantity * df_food_data[df_food_data["Name"]==name]["Single Serving (g)"]).values[0]
 
             kcal_per_100g = df_food_data[df_food_data["Name"]==name]["Calories (kcal)"].values[0]
+            carbs_per_100g = df_food_data[df_food_data["Name"] == name]["Carbs (g)"].values[0]
+            protein_per_100g = df_food_data[df_food_data["Name"] == name]["Protein (g)"].values[0]
             kcal = (kcal_per_100g * weight) / 100
+            carbs = (carbs_per_100g * weight) / 100
+            protein = (protein_per_100g * weight) / 100
             st.write(" ")
             # st.write(" ")
             st.write(f"**Weight: ", weight, " g**")
-            st.write(f"**Calories: ", kcal, " kcal**")
+            st.write(f"Calories: ", kcal, " kcal | Carbs: ", carbs, " g | Protein: ", protein, " g")
+
                 # st.write(quantity, serving, " of ", name)
                 # st.write("\t * ", weight, "g")
                 # st.write("\t * ", kcal, "kcal")
